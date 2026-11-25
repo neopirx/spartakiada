@@ -1,0 +1,21 @@
+<!doctype html><html><body style="margin:0;background:#222">
+<script type="module">
+import * as THREE from 'three';
+import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+const r = new THREE.WebGLRenderer({antialias:true}); r.setSize(1200,800); document.body.appendChild(r.domElement);
+const scene = new THREE.Scene(); scene.background=new THREE.Color(0x667788); scene.add(new THREE.HemisphereLight(0xffffff,0x444444,3));
+const cam = new THREE.PerspectiveCamera(40,1.5,0.1,10000);
+const file = new URLSearchParams(location.search).get('file') || '/assets/cars/polonez.fbx';
+new FBXLoader().load(file, (obj)=>{
+  obj.rotation.x = -Math.PI/2; scene.add(obj); obj.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(obj); const size = box.getSize(new THREE.Vector3()); const c = box.getCenter(new THREE.Vector3());
+  const info = {min:box.min.toArray(), max:box.max.toArray(), size:size.toArray(), meshes:[]};
+  obj.traverse(o=>{ if(o.isMesh) info.meshes.push({name:o.name, mat:[].concat(o.material).map(m=>m.type+':'+m.name+':'+(m.map?'map':'')), verts:o.geometry.attributes.position.count}); });
+  console.log('INFO '+JSON.stringify(info)); window.__obj = obj; window.__THREE = THREE;
+  const v = new URLSearchParams(location.search).get('v')||'px';
+  const d = Math.max(size.x,size.y,size.z)*2.2;
+  const dirs = {px:[1,0.3,0],nx:[-1,0.3,0],pz:[0,0.3,1],nz:[0,0.3,-1],top:[0.01,1,0]};
+  cam.position.copy(c).add(new THREE.Vector3(...dirs[v]).normalize().multiplyScalar(d)); cam.lookAt(c);
+  (function loop(){ r.render(scene,cam); requestAnimationFrame(loop); })();
+});
+</script></body></html>

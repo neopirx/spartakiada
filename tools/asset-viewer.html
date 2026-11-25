@@ -1,0 +1,62 @@
+<!doctype html><html><body style="margin:0;background:#222;color:#ddd;font:12px monospace">
+<!-- Asset check sheets.
+     ?mode=sides  : every building from +Z (street front), +X, -Z, -X and above
+     ?mode=lineup : all buildings + trees at in-game scale next to a 1.8 m figure and the cars -->
+<script type="module">
+import * as THREE from 'three';
+import { BUILDINGS, TREES, loadBuildingAssets } from '/src/world/assets.js';
+import { loadCarModel } from '/src/vehicle/carModel.js';
+const qp = new URLSearchParams(location.search);
+const mode = qp.get('mode') || 'sides';
+const W = 1600;
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0x667788);
+scene.add(new THREE.HemisphereLight(0xffffff, 0x445566, 2.5));
+const sun = new THREE.DirectionalLight(0xffffff, 1.5); sun.position.set(-3, 5, 8); scene.add(sun);
+const lib = await loadBuildingAssets();
+const info = [];
+const r = new THREE.WebGLRenderer({ antialias: true });
+document.body.appendChild(r.domElement);
+r.setScissorTest(true);
+if (mode === 'sides') {
+  const ids = Object.keys(BUILDINGS);
+  const cw = W / 5, ch = 200;
+  r.setSize(W, ch * ids.length);
+  const label = document.createElement('pre'); label.style.cssText = 'position:absolute;top:0;left:0;margin:0;color:#fff;text-shadow:0 0 3px #000';
+  document.body.appendChild(label);
+  const cam = new THREE.PerspectiveCamera(35, cw / ch, 0.1, 5000);
+  ids.forEach((id, row) => {
+    const obj = lib.buildings[id].create(); scene.add(obj);
+    const s = lib.buildings[id].size; const d = Math.max(s.x, s.y, s.z) * 2.0;
+    const c = new THREE.Vector3(0, s.y / 2, 0);
+    const dirs = [[0, 0.25, 1], [1, 0.25, 0], [0, 0.25, -1], [-1, 0.25, 0], [0.3, 1, 0.5]];
+    dirs.forEach((dv, i) => {
+      cam.position.copy(c).add(new THREE.Vector3(...dv).normalize().multiplyScalar(d)); cam.lookAt(c);
+      const y = (ids.length - 1 - row) * ch;
+      r.setViewport(i * cw, y, cw, ch); r.setScissor(i * cw, y, cw, ch); r.render(scene, cam);
+    });
+    scene.remove(obj);
+    info.push(`${id}: ${s.x.toFixed(1)} x ${s.y.toFixed(1)} x ${s.z.toFixed(1)} m`);
+    label.textContent += `\n\n\n\n\n\n\n\n\n\n\n\n\n\n${id}  ${s.x.toFixed(1)}w ${s.y.toFixed(1)}h ${s.z.toFixed(1)}d   [+Z front | +X | -Z | -X | top]`.replace(/^\n+/, row ? '\n\n\n\n\n\n\n\n\n\n\n\n\n' : '');
+  });
+} else {
+  let x = 0;
+  const add = (obj, name) => {
+    const b = new THREE.Box3().setFromObject(obj); const s = b.getSize(new THREE.Vector3());
+    obj.position.x += x - b.min.x;
+    scene.add(obj); info.push(`${name}: ${s.x.toFixed(1)} x ${s.y.toFixed(1)} x ${s.z.toFixed(1)}`);
+    x += s.x + 2;
+  };
+  const man = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1.8, 0.3), new THREE.MeshLambertMaterial({ color: 0xff2020 })); man.position.y = 0.9; add(man, 'man');
+  for (const id of ['polonez', 'fiat']) { const c = await loadCarModel(id); const o = c.object.clone(); o.rotation.y = Math.PI / 2; add(o, id); }
+  for (const id of Object.keys(BUILDINGS)) add(lib.buildings[id].create(), id);
+  for (const id of Object.keys(TREES)) if (lib.trees[id]) add(lib.trees[id].create(), id);
+  const H = 900; r.setSize(W, H);
+  const half = Math.min(x / 2 + 2, Number(qp.get('zoom') || 1e9));
+  let cx = Number(qp.get('cx') || x / 2); if (cx < 0) cx = x + cx;
+  const cam = new THREE.OrthographicCamera(-half, half, half * H / W, -half * H / W, 0.1, 5000);
+  cam.position.set(cx, half * H / W - 1, 600); cam.lookAt(cx, half * H / W - 1, 0);
+  r.setViewport(0, 0, W, H); r.setScissor(0, 0, W, H); r.render(scene, cam);
+}
+console.log('INFO ' + info.join(' | '));
+window.__done = true;
+</script></body></html>

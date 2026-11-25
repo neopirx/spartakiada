@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SPARTAKIADA — Antygrawitacyjne Mistrzostwa PRL</title>
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <div id="app"></div>
+
+  <!-- loading -->
+  <div id="loading" class="screen">
+    <div class="poster-logo small"><span>SPARTAKIADA</span></div>
+    <div class="load-bar"><div id="load-fill"></div></div>
+    <div id="load-text">Ładowanie pojazdu…</div>
+  </div>
+
+  <!-- title -->
+  <div id="title" class="screen hidden">
+    <div class="wedge"></div>
+    <div class="disc"></div>
+    <div class="title-block">
+      <div class="poster-logo"><span>SPARTAKIADA</span></div>
+      <div class="title-sub display">ANTYGRAWITACYJNE MISTRZOSTWA PRL <span class="sep">·</span> 2136</div>
+    </div>
+    <button class="press mi display" id="btn-press"><span class="sep">—</span> START <span class="sep">—</span></button>
+    <div class="press-hint">Enter · Spacja · Start</div>
+    <div class="title-foot">ZJEDNOCZENIE PRZEMYSŁU ANTYGRAWITACYJNEGO · NOWA HUTA · ŻERAŃ · KATOWICE</div>
+  </div>
+
+  <!-- main menu -->
+  <div id="main" class="screen menu-screen hidden">
+    <div class="wedge small"></div>
+    <div class="poster-logo mid"><span>SPARTAKIADA</span></div>
+    <nav class="menu-list big-list">
+      <button class="mi" data-go="tracks"><span class="display">WYSCIG</span><small>wyścig · race</small></button>
+      <button class="mi" data-go="options"><span class="display">OPCJE</span><small>ustawienia · options</small></button>
+      <button class="mi" data-go="controls"><span class="display">STEROWANIE</span><small>controls</small></button>
+    </nav>
+    <div class="now-playing" id="now-playing"></div>
+    <div class="hint">↑↓ wybór · Enter zatwierdź · Esc wstecz</div>
+  </div>
+
+  <!-- track select -->
+  <div id="tracks" class="screen menu-screen hidden">
+    <h1 class="screen-title display">TOR <small>wybór toru · circuit</small></h1>
+    <div class="tracks-layout">
+      <div class="panel track-list-panel">
+        <div id="track-list" class="menu-list"></div>
+        <div class="seed-row">
+          <span>ziarno / seed</span>
+          <input id="seed-input" type="number" placeholder="123456" />
+        </div>
+      </div>
+      <div class="panel track-card">
+        <div class="track-head">
+          <canvas id="track-map" width="240" height="240"></canvas>
+          <div id="track-info"></div>
+        </div>
+        <div id="race-opts" class="opt-list"></div>
+      </div>
+    </div>
+    <div class="footer-row row-nav">
+      <button class="mi ghost" data-back>◀ <span class="display">WSTECZ</span></button>
+      <button class="mi big" data-go="cars"><span class="display">DALEJ</span> ▶</button>
+    </div>
+  </div>
+
+  <!-- car select (the 3D showroom renders behind it) -->
+  <div id="cars" class="screen menu-screen hidden">
+    <h1 class="screen-title display">POJAZD <small>wybór pojazdu · vehicle</small></h1>
+    <button class="car-arrow l" id="car-prev">◀</button>
+    <button class="car-arrow r" id="car-next">▶</button>
+    <div class="panel car-card">
+      <div id="car-name" class="car-name display"></div>
+      <div id="car-full" class="car-full"></div>
+      <div id="car-blurb" class="info"></div>
+      <div id="car-stats" class="stats"></div>
+      <div id="car-opts" class="opt-list"></div>
+    </div>
+    <div class="footer-row row-nav">
+      <button class="mi ghost" data-back>◀ <span class="display">WSTECZ</span></button>
+      <button class="mi big" id="btn-start"><span class="display">START</span> ▶</button>
+    </div>
+  </div>
+
+  <!-- options -->
+  <div id="options" class="screen menu-screen hidden">
+    <h1 class="screen-title display">OPCJE <small>ustawienia · options</small></h1>
+    <div class="panel narrow">
+      <div id="options-list" class="opt-list"></div>
+      <p id="options-note" class="info"></p>
+    </div>
+    <div class="footer-row">
+      <button class="mi ghost" data-back>◀ <span class="display">WSTECZ</span></button>
+    </div>
+  </div>
+
+  <!-- controls -->
+  <div id="controls" class="screen menu-screen hidden">
+    <h1 class="screen-title display">STEROWANIE <small>controls</small></h1>
+    <div class="panel narrow help">
+      <table>
+        <tr><td>↑ / W / Spacja</td><td>Ciąg · thrust</td></tr>
+        <tr><td>← → / A D</td><td>Skręt · steer</td></tr>
+        <tr><td>↓ / S</td><td>Hamulec · brake</td></tr>
+        <tr><td>Q / E</td><td>Lotki lewa/prawa · airbrakes</td></tr>
+        <tr><td>V</td><td>Kamera · camera</td></tr>
+        <tr><td>Esc / P</td><td>Pauza · pause</td></tr>
+        <tr><td>Pad</td><td>RT ciąg · LT hamulec · LB/RB lotki · Y kamera</td></tr>
+      </table>
+      <p class="info">Najedź na <b class="red">czerwone strzałki</b> by dostać dopalacz. W zakrętach używaj lotek! Trzymaj gaz, gdy zapalą się zielone światła — dobry start daje kopa.</p>
+    </div>
+    <div class="footer-row">
+      <button class="mi ghost" data-back>◀ <span class="display">WSTECZ</span></button>
+    </div>
+  </div>
+
+  <!-- HUD -->
+  <div id="hud" class="hidden">
+    <div class="hud-tl">
+      <div class="hud-label">MIEJSCE</div>
+      <div id="hud-pos" class="hud-big arcade"></div>
+    </div>
+    <div class="hud-tc">
+      <div class="hud-label">OKRĄŻENIE</div>
+      <div id="hud-lap" class="hud-lap arcade"></div>
+    </div>
+    <div class="hud-tr">
+      <div class="hud-label">CZAS</div><div id="hud-time" class="hud-mid"></div>
+      <div id="hud-laps"></div>
+    </div>
+    <div class="hud-br">
+      <canvas id="hud-tacho" width="150" height="92"></canvas>
+      <div id="hud-speed" class="hidden"></div><div id="hud-speedbar" class="hidden"></div>
+      <div id="hud-boost">DOPALACZ</div>
+    </div>
+    <canvas id="hud-map" width="200" height="200"></canvas>
+    <div id="hud-msg" class="arcade"></div>
+    <div id="hud-center" class="arcade"></div>
+    <div id="hud-wrong">⚠ ZŁY KIERUNEK ⚠</div>
+    <div id="hud-track"></div>
+  </div>
+
+  <!-- pause -->
+  <div id="pause" class="screen dim hidden">
+    <div class="panel center-panel">
+      <h2 class="display">PAUZA</h2>
+      <button data-act="resume" class="mi big"><span class="display">WZNOW</span></button>
+      <button data-act="restart" class="mi ghost"><span class="display">RESTART</span></button>
+      <button data-act="menu" class="mi ghost"><span class="display">MENU</span></button>
+    </div>
+  </div>
+
+  <!-- results -->
+  <div id="results" class="screen dim hidden">
+    <div class="panel center-panel wide">
+      <h2 class="display">WYNIKI <small id="res-track"></small></h2>
+      <table id="res-table"></table>
+      <p id="res-best" class="info"></p>
+      <div class="row row-nav">
+        <button data-act="restart" class="mi big"><span class="display">JESZCZE RAZ</span></button>
+        <button data-act="menu" class="mi ghost"><span class="display">MENU</span></button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
